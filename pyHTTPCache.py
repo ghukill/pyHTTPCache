@@ -3,6 +3,17 @@
 import hashlib
 import os
 import requests
+import sys
+
+
+############################################################
+# CONFIG
+############################################################
+'''
+move to configuration
+'''
+chunk_size = 1024
+
 
 ############################################################
 # HELPERS
@@ -39,7 +50,7 @@ class Resource(object):
 
 	def __init__(self, url=None):
 		self.url = url
-		
+
 		# temporarily hardcoded
 		self.fs_root = '/tmp/pyHTTPCache'
 
@@ -54,7 +65,59 @@ class Resource(object):
 		return "/".join([self.fs_root, self.md5])
 
 
+	def _set_cache(self):
+		r = requests.get(self.url,stream=True)
+		with open(self.path,'w') as fd:
+			for chunk in r.iter_content(chunk_size):
+				fd.write(chunk)
+
+
 	def _cache_check(self):
-		pass
+		return os.path.exists(self.path)
 
 
+############################################################
+# TESTS
+############################################################
+def tests():
+	
+	test_resources = {
+		'image' : Resource(url='http://digital.library.wayne.edu/loris/fedora:wayne:vmc77431_1%7Cvmc77431_1_JP2/full/full/0/default.jpg')
+	}
+
+	for k in test_resources:
+		print "Tests for %s type" % k
+
+		# resource example
+		r = test_resources[k]
+
+		# set check cache
+		print "check cache..."
+		print r._cache_check()
+
+		# download content
+		print "setting cache"
+		r._set_cache()
+
+		# set check cache
+		print "re-check cache..."
+		print r._cache_check()
+
+
+
+
+
+
+
+
+############################################################
+# SCRIPT
+############################################################
+def main():
+
+	r = Resource(url=sys.argv[1])
+	print r.path
+
+
+if __name__ == '__main__':
+	main()
